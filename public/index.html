@@ -4,39 +4,90 @@
     <meta charset="UTF-8">
     <title>Riyal of Clash | صراع الريال</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: Arial; text-align: center; }
-        .login-box { border: 2px solid #ffd700; padding: 20px; border-radius: 15px; width: 300px; margin: 50px auto; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 5px; }
-        button { background: #ffd700; color: black; padding: 10px 20px; border: none; font-weight: bold; cursor: pointer; }
+        body { background: #1a1a1a; color: white; font-family: 'Arial', sans-serif; text-align: center; margin: 0; }
+        .screen { display: none; padding: 20px; }
+        .active { display: block; }
+        .gold-text { color: #ffd700; text-shadow: 1px 1px 5px #000; }
+        .card { border: 2px solid #ffd700; padding: 15px; border-radius: 15px; background: #2a2a2a; margin: 10px; display: inline-block; width: 250px; }
+        button { background: #ffd700; color: black; padding: 12px 25px; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 16px; }
+        .stats-bar { background: #000; padding: 15px; border-bottom: 3px solid #ffd700; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-around; }
+        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
     </style>
 </head>
 <body>
-    <h1>RIYAL OF CLASH</h1>
-    <div class="login-box">
-        <h2>تسجيل دخول المحاربين</h2>
-        <input type="email" id="email" placeholder="البريد الإلكتروني">
-        <input type="password" id="pass" placeholder="كلمة السر (8 خانات)">
-        <select id="gender">
-            <option value="male">ذكر</option>
-            <option value="female">أنثى</option>
-        </select>
-        <button onclick="login()">دخول اللعبة</button>
+
+    <div id="login-screen" class="screen active">
+        <h1 class="gold-text">RIYAL OF CLASH</h1>
+        <div class="card">
+            <h2 class="gold-text">تسجيل دخول المحاربين</h2>
+            <input type="email" id="email" placeholder="البريد الإلكتروني">
+            <input type="password" id="pass" placeholder="كلمة السر">
+            <button onclick="enterGame()">دخول المملكة</button>
+        </div>
     </div>
 
-    <script src="/socket.io/socket.io.js"></script>
+    <div id="main-screen" class="screen">
+        <div class="stats-bar">
+            <span>اللاعب: <b id="user-name" class="gold-text">...</b></span>
+            <span>الذهب: <b id="user-gold" style="color:gold;">1000</b> 💰</span>
+        </div>
+        <h2 class="gold-text">مرحباً بك في ساحة المدينة</h2>
+        <div class="card">
+            <h3>المتجر الملكي 🛒</h3>
+            <p>جهز جيشك بالأبطال الأقوياء</p>
+            <button onclick="showScreen('shop-screen')">دخول المتجر</button>
+        </div>
+        <div class="card">
+            <h3>ساحة القتال ⚔️</h3>
+            <p>اهجم على الأعداء لجمع الغنائم</p>
+            <button onclick="alert('سيبدأ الموسم القتالي قريباً!')">بدء الهجوم</button>
+        </div>
+    </div>
+
+    <div id="shop-screen" class="screen">
+        <h2 class="gold-text">متجر الأبطال</h2>
+        <div class="card">
+            <div style="font-size: 50px;">🛡️</div>
+            <h4>الفارس الذهبي</h4>
+            <p>القوة: 150 | السعر: 500 ذهبية</p>
+            <button onclick="buyHero('الفارس الذهبي', 500)">شراء البطل</button>
+        </div>
+        <div class="card">
+            <div style="font-size: 50px;">🏹</div>
+            <h4>رامي السهام</h4>
+            <p>القوة: 100 | السعر: 300 ذهبية</p>
+            <button onclick="buyHero('رامي السهام', 300)">شراء البطل</button>
+        </div>
+        <br><br>
+        <button onclick="showScreen('main-screen')" style="background:gray; color:white;">العودة للمدينة</button>
+    </div>
+
     <script>
-        const socket = io();
-        function login() {
-            const data = {
-                email: document.getElementById('email').value,
-                password: document.getElementById('pass').value,
-                gender: document.getElementById('gender').value
-            };
-            if(data.password.length >= 8) {
-                socket.emit('register', data);
-                alert('جاري تسجيل بياناتك في الخزنة...');
+        let gold = 1000;
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function enterGame() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            if(email && pass.length >= 8) {
+                document.getElementById('user-name').innerText = email.split('@')[0];
+                showScreen('main-screen');
             } else {
-                alert('كلمة السر ضعيفة!');
+                alert("يرجى إدخال إيميل صحيح وكلمة سر من 8 خانات");
+            }
+        }
+
+        function buyHero(name, price) {
+            if(gold >= price) {
+                gold -= price;
+                document.getElementById('user-gold').innerText = gold;
+                alert("مبروك أيها القائد! لقد انضم " + name + " لجيشك.");
+            } else {
+                alert("ذهبك لا يكفي لشراء هذا البطل!");
             }
         }
     </script>
