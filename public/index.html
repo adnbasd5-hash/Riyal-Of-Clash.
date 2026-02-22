@@ -2,93 +2,96 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Riyal of Clash | صراع الريال</title>
+    <title>Riyal of Clash | أساطير صراع الريال</title>
     <style>
-        body { background: #1a1a1a; color: white; font-family: 'Arial', sans-serif; text-align: center; margin: 0; }
-        .screen { display: none; padding: 20px; }
+        body { background: #0f0f0f; color: white; font-family: 'Cairo', sans-serif; margin: 0; overflow-x: hidden; }
+        .screen { display: none; padding: 20px; animation: fadeIn 0.5s; }
         .active { display: block; }
-        .gold-text { color: #ffd700; text-shadow: 1px 1px 5px #000; }
-        .card { border: 2px solid #ffd700; padding: 15px; border-radius: 15px; background: #2a2a2a; margin: 10px; display: inline-block; width: 250px; }
-        button { background: #ffd700; color: black; padding: 12px 25px; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; font-size: 16px; }
-        .stats-bar { background: #000; padding: 15px; border-bottom: 3px solid #ffd700; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-around; }
-        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        .gold-text { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
+        .stats-bar { background: rgba(0,0,0,0.9); padding: 15px; border-bottom: 3px solid #ffd700; position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-around; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 20px; }
+        .card { background: #222; border: 2px solid #444; border-radius: 15px; padding: 10px; transition: 0.3s; position: relative; }
+        .card:hover { border-color: #ffd700; transform: translateY(-5px); }
+        .hero-img { font-size: 50px; background: #333; border-radius: 10px; margin-bottom: 10px; }
+        button { background: linear-gradient(to bottom, #ffd700, #b8860b); color: black; padding: 10px 15px; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; }
+        .map-card { height: 150px; background-size: cover; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 3px solid #555; }
+        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
     </style>
 </head>
 <body>
 
-    <div id="login-screen" class="screen active">
-        <h1 class="gold-text">RIYAL OF CLASH</h1>
-        <div class="card">
-            <h2 class="gold-text">تسجيل دخول المحاربين</h2>
-            <input type="email" id="email" placeholder="البريد الإلكتروني">
-            <input type="password" id="pass" placeholder="كلمة السر">
-            <button onclick="enterGame()">دخول المملكة</button>
-        </div>
+    <div class="stats-bar">
+        <span>💰 الذهب: <b id="gold">5000</b></span>
+        <span>🛡️ جيشك: <b id="army-count">0</b></span>
+        <button onclick="showScreen('main-screen')" style="width: auto; padding: 5px 15px;">الرئيسية</button>
     </div>
 
-    <div id="main-screen" class="screen">
-        <div class="stats-bar">
-            <span>اللاعب: <b id="user-name" class="gold-text">...</b></span>
-            <span>الذهب: <b id="user-gold" style="color:gold;">1000</b> 💰</span>
+    <div id="main-screen" class="screen active">
+        <h1 class="gold-text">اختر منطقة الغزو ⚔️</h1>
+        <div class="grid">
+            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/forest-landscape_23-2148159150.jpg');" onclick="startBattle('غابة العمالقة')">غابة العمالقة</div>
+            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/desert-landscape_23-2148159141.jpg');" onclick="startBattle('صحراء الموت')">صحراء الموت</div>
+            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/snowy-mountains_23-2148159160.jpg');" onclick="startBattle('جبال الثلج')">جبال الثلج</div>
         </div>
-        <h2 class="gold-text">مرحباً بك في ساحة المدينة</h2>
-        <div class="card">
-            <h3>المتجر الملكي 🛒</h3>
-            <p>جهز جيشك بالأبطال الأقوياء</p>
-            <button onclick="showScreen('shop-screen')">دخول المتجر</button>
-        </div>
-        <div class="card">
-            <h3>ساحة القتال ⚔️</h3>
-            <p>اهجم على الأعداء لجمع الغنائم</p>
-            <button onclick="alert('سيبدأ الموسم القتالي قريباً!')">بدء الهجوم</button>
-        </div>
+        <button onclick="showScreen('shop-screen')" style="margin-top: 20px; font-size: 20px;">دخول المتجر لشراء أبطال 🛒</button>
     </div>
 
     <div id="shop-screen" class="screen">
-        <h2 class="gold-text">متجر الأبطال</h2>
-        <div class="card">
-            <div style="font-size: 50px;">🛡️</div>
-            <h4>الفارس الذهبي</h4>
-            <p>القوة: 150 | السعر: 500 ذهبية</p>
-            <button onclick="buyHero('الفارس الذهبي', 500)">شراء البطل</button>
-        </div>
-        <div class="card">
-            <div style="font-size: 50px;">🏹</div>
-            <h4>رامي السهام</h4>
-            <p>القوة: 100 | السعر: 300 ذهبية</p>
-            <button onclick="buyHero('رامي السهام', 300)">شراء البطل</button>
-        </div>
-        <br><br>
-        <button onclick="showScreen('main-screen')" style="background:gray; color:white;">العودة للمدينة</button>
+        <h1 class="gold-text">متجر الأبطال الأسطوريين 🛡️</h1>
+        <div class="grid" id="heroes-list">
+            </div>
     </div>
 
     <script>
-        let gold = 1000;
+        let gold = 5000;
+        let myArmy = [];
+        const heroEmojis = ["🗡️","🏹","🧙","🛡️","🐉","🦁","🐺","👊","⚡","🔥","❄️","🌑","🌞","💎","🤖","👺","🧞","🧜","🧛","🧟","🦄","🦅","🦂","🐍","🦍","🐘","🦒","🐃","🐎","🐫"];
 
-        function showScreen(screenId) {
+        // توليد 30 بطل
+        const heroesList = document.getElementById('heroes-list');
+        for(let i=1; i<=30; i++) {
+            let price = i * 200;
+            let power = i * 50;
+            heroesList.innerHTML += `
+                <div class="card">
+                    <div class="hero-img">${heroEmojis[i-1]}</div>
+                    <h4>بطل المستوى ${i}</h4>
+                    <p>القوة: ${power}</p>
+                    <p style="color:gold;">السعر: ${price}</p>
+                    <button onclick="buyHero('بطل ${i}', ${price}, ${power})">شراء</button>
+                </div>
+            `;
+        }
+
+        function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(screenId).classList.add('active');
+            document.getElementById(id).classList.add('active');
         }
 
-        function enterGame() {
-            const email = document.getElementById('email').value;
-            const pass = document.getElementById('pass').value;
-            if(email && pass.length >= 8) {
-                document.getElementById('user-name').innerText = email.split('@')[0];
-                showScreen('main-screen');
-            } else {
-                alert("يرجى إدخال إيميل صحيح وكلمة سر من 8 خانات");
-            }
-        }
-
-        function buyHero(name, price) {
+        function buyHero(name, price, power) {
             if(gold >= price) {
                 gold -= price;
-                document.getElementById('user-gold').innerText = gold;
-                alert("مبروك أيها القائد! لقد انضم " + name + " لجيشك.");
+                myArmy.push({name, power});
+                updateStats();
+                alert(`تم شراء ${name}! قوة جيشك زادت.`);
             } else {
-                alert("ذهبك لا يكفي لشراء هذا البطل!");
+                alert("الذهب لا يكفي!");
             }
+        }
+
+        function updateStats() {
+            document.getElementById('gold').innerText = gold;
+            document.getElementById('army-count').innerText = myArmy.length;
+        }
+
+        function startBattle(mapName) {
+            if(myArmy.length === 0) {
+                alert("لا يمكنك الهجوم بدون جيش! اذهب للمتجر أولاً.");
+                return;
+            }
+            alert(`جاري الهجوم على ${mapName}... انتصرت وجمعت 1000 قطعة ذهب!`);
+            gold += 1000;
+            updateStats();
         }
     </script>
 </body>
