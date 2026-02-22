@@ -3,91 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Brawl Stars Clone | صراع الريال</title>
+    <title>Riyal of Clash | Brawl Edition</title>
     <style>
-        :root { --gold: #ffd700; --blue-bg: #1e3799; --card-bg: rgba(0, 0, 0, 0.4); }
-        body { margin: 0; background: var(--blue-bg); color: white; font-family: 'Arial'; overflow: hidden; }
+        :root { --gold: #ffd700; --hp: #2ecc71; }
+        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Arial'; }
         
-        /* الشريط العلوي */
-        .top-nav { display: flex; justify-content: space-around; padding: 10px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--gold); }
-        .stat-box { display: flex; align-items: center; gap: 5px; background: #000; padding: 5px 15px; border-radius: 20px; border: 1px solid var(--gold); font-weight: bold; }
+        /* شاشة اللعب والواجهة */
+        #game-container { position: relative; width: 100vw; height: 100vh; background: url('https://img.freepik.com/free-vector/battle-arena-background_23-2148141443.jpg') center/cover; }
+        canvas { display: block; }
 
-        /* الشاشة الرئيسية */
-        .main-lobby { display: flex; height: 80vh; padding: 20px; gap: 20px; }
+        /* شريط المعلومات العلوي طبق الأصل */
+        .top-stats { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 100; pointer-events: none; }
+        .stat-item { background: rgba(0,0,0,0.8); border: 2px solid var(--gold); border-radius: 15px; padding: 5px 15px; font-weight: bold; color: white; display: flex; align-items: center; gap: 5px; }
+
+        /* التحكم - الأنالوج وأزرار الهجوم */
+        .joystick-container { position: fixed; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); }
+        #stick { position: absolute; width: 60px; height: 60px; background: #fff; border-radius: 50%; top: 30px; left: 30px; opacity: 0.8; }
         
-        /* الجانب الأيمن: البطل والبيانات */
-        .hero-section { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .hero-img { font-size: 150px; filter: drop-shadow(0 0 20px var(--gold)); animation: float 3s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-20px); } }
-        .player-card { background: var(--card-bg); padding: 15px; border-radius: 15px; width: 80%; text-align: center; border-left: 5px solid var(--gold); }
+        .attack-btn { position: fixed; bottom: 50px; right: 50px; width: 100px; height: 100px; background: #e74c3c; border-radius: 50%; border: 5px solid white; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 8px 0 #c0392b; cursor: pointer; }
 
-        /* الجانب الأيسر: خرائط اللعب */
-        .modes-section { flex: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .mode-card { background: var(--card-bg); border-radius: 15px; border: 2px solid #fff; overflow: hidden; position: relative; cursor: pointer; transition: 0.2s; }
-        .mode-card:hover { transform: scale(1.02); border-color: var(--gold); }
-        .mode-title { background: rgba(0,0,0,0.7); padding: 10px; font-size: 14px; }
-        .mode-image { height: 80px; background-size: cover; background-position: center; }
-
-        /* شريط الأسفل وزر اللعب */
-        .footer { position: fixed; bottom: 0; width: 100%; height: 80px; background: rgba(0,0,0,0.9); display: flex; justify-content: space-between; align-items: center; padding: 0 20px; box-sizing: border-box; }
-        .play-btn { background: #ffcc00; color: #000; font-size: 30px; font-weight: bold; padding: 10px 80px; border-radius: 10px; border: none; cursor: pointer; box-shadow: 0 5px 0 #b8860b; }
-        .play-btn:active { transform: translateY(3px); box-shadow: none; }
+        /* تسمية البطل وشريط الحياة */
+        .hp-bar-container { position: absolute; width: 60px; height: 8px; background: #000; border-radius: 4px; border: 1px solid white; }
+        .hp-fill { height: 100%; background: var(--hp); border-radius: 4px; transition: 0.2s; }
     </style>
 </head>
 <body>
 
-    <div class="top-nav">
-        <div class="stat-box">🏆 3051</div>
-        <div class="stat-box">💰 2544</div>
-        <div class="stat-box">💎 207</div>
-        <div class="stat-box">⭐ 3033</div>
+    <div id="game-container">
+        <div class="top-stats">
+            <div class="stat-item">🏆 <span>3051</span></div>
+            <div class="stat-item">💰 <span>2544</span></div>
+            <div class="stat-item">💎 <span>208</span></div>
+        </div>
+
+        <canvas id="mainCanvas"></canvas>
+
+        <div class="joystick-container" id="joy-base">
+            <div id="stick"></div>
+        </div>
+
+        <div class="attack-btn" id="fire-btn">⚔️</div>
     </div>
 
-    <div class="main-lobby">
-        <div class="hero-section">
-            <div class="hero-img">🤖</div> <div class="player-card">
-                <h3>امعذ</h3>
-                <p>🏆 1752 / 1900</p>
-                <div style="background:#555; height:10px; border-radius:5px;"><div style="width:80%; height:100%; background:var(--gold);"></div></div>
-            </div>
-        </div>
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        <div class="modes-section">
-            <div class="mode-card" onclick="alert('جاري دخول الحدث...')">
-                <div class="mode-title">خريطة جديدة بعد: 11 س 5 د</div>
-                <div class="mode-image" style="background-image: url('https://img.freepik.com/free-vector/pixel-art-night-ocean-background_52683-120539.jpg');"></div>
-                <div style="padding:10px;"><b>اساجي</b><br><small>الفدية مارن</small></div>
-            </div>
-            <div class="mode-card">
-                <div class="mode-title">خريطة جديدة بعد: 2 س 55 د</div>
-                <div class="mode-image" style="background-image: url('https://img.freepik.com/free-vector/volcano-crater-landscape-lava-magma_107791-2358.jpg');"></div>
-                <div style="padding:10px;"><b>عرهد</b><br><small>الفورتة المرم</small></div>
-            </div>
-            <div class="mode-card">
-                <div class="mode-title">عراك كرة السلة بعد: 8 س 5 د</div>
-                <div class="mode-image" style="background-image: url('https://img.freepik.com/free-vector/stadium-background_23-2148141443.jpg');"></div>
-                <div style="padding:10px;"><b>الحد ايكر</b><br><small>قرت المبيسال</small></div>
-            </div>
-            <div class="mode-card">
-                <div class="mode-title">البيفتو الحاسمة الزوجية</div>
-                <div class="mode-image" style="background-image: url('https://img.freepik.com/free-vector/game-landscape-with-mountains-trees_107791-1823.jpg');"></div>
-                <div style="padding:10px;"><b>امعان</b><br><small>سمار ايمان تي صانيان</small></div>
-            </div>
-        </div>
-    </div>
+        // تحميل صور الشخصيات (آيش وكولت)
+        const ashImg = new Image();
+        ashImg.src = 'https://raw.githubusercontent.com/BrawlStars/BrawlStars-Assets/master/Brawlers/Ash/Ash_Icon.png'; 
+        
+        const enemyImg = new Image();
+        enemyImg.src = 'https://raw.githubusercontent.com/BrawlStars/BrawlStars-Assets/master/Brawlers/Colt/Colt_Icon.png';
 
-    <div class="footer">
-        <div style="display:flex; gap:20px;">
-            <div style="text-align:center">🎟️<br><small>المهام</small></div>
-            <div style="text-align:center">👥<br><small>الأصدقاء</small></div>
-        </div>
-        <button class="play-btn" onclick="alert('جاري بدء اللعب...')">اللعب</button>
-        <div style="display:flex; gap:20px;">
-            <div style="text-align:center">🛒<br><small>المتجر</small></div>
-            <div style="text-align:center">🦸<br><small>الأبطال</small></div>
-        </div>
-    </div>
+        let player = { x: canvas.width/2, y: canvas.height/2, hp: 4500, maxHp: 4500, size: 60, speed: 5, dirX: 0, dirY: 0 };
+        let bullets = [], enemies = [{ x: 200, y: 200, hp: 3000, maxHp: 3000 }];
 
+        // التحكم بالأنالوج
+        const stick = document.getElementById('stick');
+        const joyBase = document.getElementById('joy-base');
+        let joyActive = false;
+
+        joyBase.addEventListener('touchstart', () => joyActive = true);
+        window.addEventListener('touchmove', (e) => {
+            if(!joyActive) return;
+            let t = e.touches[0];
+            let rect = joyBase.getBoundingClientRect();
+            let dx = t.clientX - (rect.left + 60);
+            let dy = t.clientY - (rect.top + 60);
+            let dist = Math.min(Math.hypot(dx, dy), 40);
+            let angle = Math.atan2(dy, dx);
+            
+            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+            player.dirX = Math.cos(angle);
+            player.dirY = Math.sin(angle);
+        });
+        window.addEventListener('touchend', () => {
+            joyActive = false;
+            stick.style.transform = 'translate(0,0)';
+            player.dirX = 0; player.dirY = 0;
+        });
+
+        // زر الهجوم
+        document.getElementById('fire-btn').addEventListener('touchstart', () => {
+            bullets.push({ x: player.x, y: player.y, vx: player.dirX*15 || 15, vy: player.dirY*15 || 0 });
+        });
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // تحريك اللاعب
+            player.x += player.dirX * player.speed;
+            player.y += player.dirY * player.speed;
+
+            // رسم البطل (آيش)
+            ctx.drawImage(ashImg, player.x - 30, player.y - 30, 60, 60);
+            drawHP(player.x, player.y - 45, player.hp, player.maxHp, "أنت");
+
+            // رسم الأعداء (كولت)
+            enemies.forEach((en, i) => {
+                ctx.drawImage(enemyImg, en.x - 30, en.y - 30, 60, 60);
+                drawHP(en.x, en.y - 45, en.hp, en.maxHp, "بوت");
+                // مطاردة اللاعب
+                en.x += (player.x - en.x) * 0.01;
+                en.y += (player.y - en.y) * 0.01;
+            });
+
+            // تحديث الرصاص والتصادم
+            bullets.forEach((b, bi) => {
+                b.x += b.vx; b.y += b.vy;
+                ctx.fillStyle = "yellow";
+                ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill();
+                
+                enemies.forEach((en, ei) => {
+                    if(Math.hypot(b.x-en.x, b.y-en.y) < 30) {
+                        en.hp -= 800;
+                        bullets.splice(bi, 1);
+                        if(en.hp <= 0) enemies.splice(ei, 1);
+                    }
+                });
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function drawHP(x, y, hp, max, name) {
+            ctx.fillStyle = "rgba(0,0,0,0.5)";
+            ctx.fillRect(x - 30, y, 60, 8);
+            ctx.fillStyle = "#2ecc71";
+            ctx.fillRect(x - 30, y, (hp/max)*60, 8);
+            ctx.fillStyle = "white";
+            ctx.font = "12px Arial";
+            ctx.fillText(name, x - 10, y - 5);
+        }
+
+        gameLoop();
+    </script>
 </body>
 </html>
-
