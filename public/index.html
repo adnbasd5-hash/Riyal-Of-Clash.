@@ -2,96 +2,161 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>Riyal of Clash | أساطير صراع الريال</title>
+    <title>صراع الريال | النسخة الأسطورية</title>
     <style>
-        body { background: #0f0f0f; color: white; font-family: 'Cairo', sans-serif; margin: 0; overflow-x: hidden; }
-        .screen { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        :root { --gold: #ffd700; --bg: #050a14; }
+        body { background: var(--bg); color: white; font-family: 'Arial'; margin: 0; overflow-x: hidden; }
+        .screen { display: none; min-height: 100vh; width: 100vw; }
         .active { display: block; }
-        .gold-text { color: #ffd700; text-shadow: 0 0 10px #ffd700; }
-        .stats-bar { background: rgba(0,0,0,0.9); padding: 15px; border-bottom: 3px solid #ffd700; position: sticky; top: 0; z-index: 1000; display: flex; justify-content: space-around; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; padding: 20px; }
-        .card { background: #222; border: 2px solid #444; border-radius: 15px; padding: 10px; transition: 0.3s; position: relative; }
-        .card:hover { border-color: #ffd700; transform: translateY(-5px); }
-        .hero-img { font-size: 50px; background: #333; border-radius: 10px; margin-bottom: 10px; }
-        button { background: linear-gradient(to bottom, #ffd700, #b8860b); color: black; padding: 10px 15px; border: none; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; }
-        .map-card { height: 150px; background-size: cover; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; border: 3px solid #555; }
-        @keyframes fadeIn { from {opacity: 0;} to {opacity: 1;} }
+        
+        /* شريط الإحصائيات */
+        .stats-header { background: rgba(0,0,0,0.9); padding: 15px; display: flex; justify-content: space-around; border-bottom: 2px solid var(--gold); position: sticky; top:0; z-index: 100; }
+        
+        /* خريطة المناطق */
+        .world-map { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; padding-bottom: 100px; }
+        .region-card { border: 3px solid #444; border-radius: 20px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; transition: 0.3s; background-size: cover; background-position: center; }
+        .region-card:hover { border-color: var(--gold); transform: scale(1.02); }
+        .locked { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; }
+
+        /* ساحة المعركة */
+        .arena { height: 100vh; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://img.freepik.com/free-vector/battle-background-with-fire-sparks_23-2148962304.jpg'); background-size: cover; }
+        .battle-view { display: flex; justify-content: space-around; align-items: center; height: 60%; padding-top: 50px; }
+        .character { text-align: center; }
+        .hp-container { width: 120px; height: 15px; background: #333; border-radius: 10px; border: 1px solid white; margin-bottom: 10px; }
+        .hp-bar { height: 100%; background: #ff4d4d; width: 100%; transition: 0.5s; }
+        .char-img { font-size: 80px; filter: drop-shadow(0 0 15px var(--gold)); }
+        
+        /* الصناديق */
+        #box-screen { background: radial-gradient(#1e3a8a, #000); text-align: center; padding-top: 50px; }
+        .box-anim { font-size: 150px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 0 20px var(--gold)); }
+        .box-anim:hover { transform: scale(1.1); }
+
+        .controls { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px; display: flex; justify-content: center; gap: 10px; }
+        button { background: var(--gold); color: black; padding: 12px 20px; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #b8860b; }
+        .btn-blue { background: #3498db; color: white; box-shadow: 0 4px 0 #2980b9; }
     </style>
 </head>
 <body>
 
-    <div class="stats-bar">
-        <span>💰 الذهب: <b id="gold">5000</b></span>
-        <span>🛡️ جيشك: <b id="army-count">0</b></span>
-        <button onclick="showScreen('main-screen')" style="width: auto; padding: 5px 15px;">الرئيسية</button>
+    <div class="stats-header">
+        <span>💰 الذهب: <b id="gold-txt">5000</b></span>
+        <span>🏆 المرحلة: <b id="level-txt">1</b></span>
     </div>
 
-    <div id="main-screen" class="screen active">
-        <h1 class="gold-text">اختر منطقة الغزو ⚔️</h1>
-        <div class="grid">
-            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/forest-landscape_23-2148159150.jpg');" onclick="startBattle('غابة العمالقة')">غابة العمالقة</div>
-            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/desert-landscape_23-2148159141.jpg');" onclick="startBattle('صحراء الموت')">صحراء الموت</div>
-            <div class="map-card" style="background-image: linear-gradient(rgba(0,0,0,0.5),rgba(0,0,0,0.5)), url('https://img.freepik.com/free-photo/snowy-mountains_23-2148159160.jpg');" onclick="startBattle('جبال الثلج')">جبال الثلج</div>
+    <div id="map-screen" class="screen active">
+        <h1 style="text-align:center; color:var(--gold);">خريطة الغزو 🌍</h1>
+        <div class="world-map">
+            <div class="region-card" style="background-image: url('https://img.freepik.com/free-photo/forest-landscape_23-2148159150.jpg');" onclick="enterBattle(1, 'غابة الوحوش', '🐺')">1. غابة الوحوش 🌲</div>
+            <div id="reg-2" class="region-card locked" style="background-image: url('https://img.freepik.com/free-photo/desert-landscape_23-2148159141.jpg');" onclick="enterBattle(2, 'صحراء الهلاك', '🦂')">2. صحراء الهلاك 🏜️</div>
+            <div id="reg-3" class="region-card locked" style="background-image: url('https://img.freepik.com/free-photo/snowy-mountains_23-2148159160.jpg');" onclick="enterBattle(3, 'عرين التنين', '🐉')">3. عرين التنين ❄️</div>
         </div>
-        <button onclick="showScreen('shop-screen')" style="margin-top: 20px; font-size: 20px;">دخول المتجر لشراء أبطال 🛒</button>
+        <div class="controls">
+            <button onclick="showScreen('box-screen')" class="btn-blue">🎁 فتح صناديق (500💰)</button>
+        </div>
     </div>
 
-    <div id="shop-screen" class="screen">
-        <h1 class="gold-text">متجر الأبطال الأسطوريين 🛡️</h1>
-        <div class="grid" id="heroes-list">
+    <div id="battle-screen" class="screen arena">
+        <h2 id="battle-title" style="text-align:center;"></h2>
+        <div class="battle-view">
+            <div class="character">
+                <div class="hp-container"><div id="p-hp" class="hp-bar"></div></div>
+                <div class="char-img" id="player-img">🛡️</div>
+                <h3>أنت</h3>
             </div>
+            <div class="character">
+                <div class="hp-container"><div id="e-hp" class="hp-bar"></div></div>
+                <div id="e-img" class="char-img"></div>
+                <h3 id="e-name">الوحش</h3>
+            </div>
+        </div>
+        <div class="controls">
+            <button onclick="attack()">هجوم ⚔️</button>
+            <button onclick="heal()" style="background: #2ecc71;">ترميم ✨</button>
+            <button onclick="showScreen('map-screen')" style="background: #666;">انسحاب 🏳️</button>
+        </div>
+    </div>
+
+    <div id="box-screen" class="screen">
+        <h1 class="gold-text">صندوق الحظ الأسطوري</h1>
+        <div id="box-ui">
+            <div class="box-anim" onclick="openBox()">🎁</div>
+            <p>اضغط للفتح مقابل 500 ذهبية</p>
+        </div>
+        <div id="reward-ui" style="display:none;">
+            <div id="reward-icon" style="font-size:120px;"></div>
+            <h2 id="reward-text" class="gold-text"></h2>
+            <button onclick="showScreen('map-screen')">ممتاز!</button>
+        </div>
     </div>
 
     <script>
-        let gold = 5000;
-        let myArmy = [];
-        const heroEmojis = ["🗡️","🏹","🧙","🛡️","🐉","🦁","🐺","👊","⚡","🔥","❄️","🌑","🌞","💎","🤖","👺","🧞","🧜","🧛","🧟","🦄","🦅","🦂","🐍","🦍","🐘","🦒","🐃","🐎","🐫"];
-
-        // توليد 30 بطل
-        const heroesList = document.getElementById('heroes-list');
-        for(let i=1; i<=30; i++) {
-            let price = i * 200;
-            let power = i * 50;
-            heroesList.innerHTML += `
-                <div class="card">
-                    <div class="hero-img">${heroEmojis[i-1]}</div>
-                    <h4>بطل المستوى ${i}</h4>
-                    <p>القوة: ${power}</p>
-                    <p style="color:gold;">السعر: ${price}</p>
-                    <button onclick="buyHero('بطل ${i}', ${price}, ${power})">شراء</button>
-                </div>
-            `;
-        }
+        let gold = 5000, level = 1, pHP = 100, eHP = 100, currentLevel = 1;
+        let pDmgMult = 1; // لزيادة القوة عند الحصول على أبطال من الصناديق
+        const legendaryHeroes = ["🗡️", "🏹", "🧙", "🤖", "🧞", "🦁", "🔥", "❄️"];
 
         function showScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-        }
-
-        function buyHero(name, price, power) {
-            if(gold >= price) {
-                gold -= price;
-                myArmy.push({name, power});
-                updateStats();
-                alert(`تم شراء ${name}! قوة جيشك زادت.`);
-            } else {
-                alert("الذهب لا يكفي!");
+            if(id === 'box-screen') {
+                document.getElementById('box-ui').style.display = 'block';
+                document.getElementById('reward-ui').style.display = 'none';
             }
         }
 
-        function updateStats() {
-            document.getElementById('gold').innerText = gold;
-            document.getElementById('army-count').innerText = myArmy.length;
+        function enterBattle(lvl, name, img) {
+            if(lvl > level) return alert("المنطقة مغلقة!");
+            currentLevel = lvl;
+            pHP = 100; eHP = 100 + (lvl * 30);
+            document.getElementById('e-name').innerText = name;
+            document.getElementById('e-img').innerText = img;
+            document.getElementById('battle-title').innerText = name;
+            updateUI();
+            showScreen('battle-screen');
         }
 
-        function startBattle(mapName) {
-            if(myArmy.length === 0) {
-                alert("لا يمكنك الهجوم بدون جيش! اذهب للمتجر أولاً.");
-                return;
+        function attack() {
+            let pDmg = (Math.floor(Math.random() * 20) + 15) * pDmgMult;
+            let eDmg = Math.floor(Math.random() * (10 + currentLevel * 5));
+            eHP -= pDmg; pHP -= eDmg;
+            if(eHP <= 0) {
+                alert("نصر ساحق! +1000 ذهب");
+                gold += 1000;
+                if(currentLevel === level) level++;
+                unlockRegions();
+                showScreen('map-screen');
+            } else if(pHP <= 0) {
+                alert("خسرت! عد للمدينة");
+                showScreen('map-screen');
             }
-            alert(`جاري الهجوم على ${mapName}... انتصرت وجمعت 1000 قطعة ذهب!`);
-            gold += 1000;
-            updateStats();
+            updateUI();
+        }
+
+        function openBox() {
+            if(gold < 500) return alert("الذهب غير كافٍ!");
+            gold -= 500;
+            const hero = legendaryHeroes[Math.floor(Math.random() * legendaryHeroes.length)];
+            pDmgMult += 0.5; // كل بطل يزيد قوتك 50%
+            document.getElementById('box-ui').style.display = 'none';
+            document.getElementById('reward-ui').style.display = 'block';
+            document.getElementById('reward-icon').innerText = hero;
+            document.getElementById('reward-text').innerText = "بطل جديد! قوتك زادت!";
+            document.getElementById('player-img').innerText = hero;
+            updateUI();
+        }
+
+        function heal() { pHP = Math.min(100, pHP + 20); updateUI(); }
+
+        function unlockRegions() {
+            if(level >= 2) document.getElementById('reg-2').classList.remove('locked');
+            if(level >= 3) document.getElementById('reg-3').classList.remove('locked');
+            updateUI();
+        }
+
+        function updateUI() {
+            document.getElementById('p-hp').style.width = pHP + "%";
+            document.getElementById('e-hp').style.width = (eHP / (100 + currentLevel * 30) * 100) + "%";
+            document.getElementById('gold-txt').innerText = gold;
+            document.getElementById('level-txt').innerText = level;
         }
     </script>
 </body>
