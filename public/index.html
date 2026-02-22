@@ -2,162 +2,167 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>صراع الريال | النسخة الأسطورية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Riyal of Clash | الأسطورة</title>
     <style>
-        :root { --gold: #ffd700; --bg: #050a14; }
-        body { background: var(--bg); color: white; font-family: 'Arial'; margin: 0; overflow-x: hidden; }
-        .screen { display: none; min-height: 100vh; width: 100vw; }
-        .active { display: block; }
+        :root { --gold: #ffd700; --blue: #00d4ff; --red: #ff4d4d; --purple: #a020f0; }
+        body { margin: 0; background: #000; color: white; font-family: 'Arial', sans-serif; overflow: hidden; touch-action: none; }
         
-        /* شريط الإحصائيات */
-        .stats-header { background: rgba(0,0,0,0.9); padding: 15px; display: flex; justify-content: space-around; border-bottom: 2px solid var(--gold); position: sticky; top:0; z-index: 100; }
+        /* واجهة Brawl Stars الاحترافية */
+        .ui-layer { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+        .top-stats { display: flex; justify-content: space-between; padding: 10px; pointer-events: auto; }
+        .stat-card { background: rgba(0,0,0,0.7); border: 2px solid var(--gold); border-radius: 15px; padding: 5px 15px; display: flex; align-items: center; gap: 8px; font-weight: bold; }
         
-        /* خريطة المناطق */
-        .world-map { display: grid; grid-template-columns: 1fr; gap: 20px; padding: 20px; padding-bottom: 100px; }
-        .region-card { border: 3px solid #444; border-radius: 20px; height: 120px; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; cursor: pointer; transition: 0.3s; background-size: cover; background-position: center; }
-        .region-card:hover { border-color: var(--gold); transform: scale(1.02); }
-        .locked { filter: grayscale(1); cursor: not-allowed; opacity: 0.5; }
+        /* القائمة الجانبية والإعدادات */
+        .side-bar { position: absolute; left: 10px; top: 80px; display: flex; flex-direction: column; gap: 10px; pointer-events: auto; }
+        .icon-btn { width: 50px; height: 50px; background: #34495e; border: 3px solid #fff; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 24px; }
+        
+        /* الأنالوج والأزرار */
+        .controls { position: absolute; bottom: 0; width: 100%; height: 250px; }
+        #joystick { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); pointer-events: auto; }
+        #stick { position: absolute; top: 30px; left: 30px; width: 60px; height: 60px; background: #fff; border-radius: 50%; opacity: 0.7; }
+        
+        .action-btns { position: absolute; bottom: 50px; right: 50px; display: flex; flex-direction: column; gap: 20px; align-items: center; pointer-events: auto; }
+        .btn-main { width: 90px; height: 90px; border-radius: 50%; border: 5px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 35px; cursor: pointer; box-shadow: 0 6px 0 rgba(0,0,0,0.3); }
+        .attack { background: var(--red); }
+        .super { background: var(--gold); width: 70px; height: 70px; font-size: 25px; border-color: var(--purple); display: none; }
 
-        /* ساحة المعركة */
-        .arena { height: 100vh; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('https://img.freepik.com/free-vector/battle-background-with-fire-sparks_23-2148962304.jpg'); background-size: cover; }
-        .battle-view { display: flex; justify-content: space-around; align-items: center; height: 60%; padding-top: 50px; }
-        .character { text-align: center; }
-        .hp-container { width: 120px; height: 15px; background: #333; border-radius: 10px; border: 1px solid white; margin-bottom: 10px; }
-        .hp-bar { height: 100%; background: #ff4d4d; width: 100%; transition: 0.5s; }
-        .char-img { font-size: 80px; filter: drop-shadow(0 0 15px var(--gold)); }
+        /* نافذة الإعدادات */
+        #settings-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
+        .modal-content { background: #2c3e50; padding: 30px; border-radius: 20px; border: 4px solid var(--gold); text-align: center; width: 80%; }
         
-        /* الصناديق */
-        #box-screen { background: radial-gradient(#1e3a8a, #000); text-align: center; padding-top: 50px; }
-        .box-anim { font-size: 150px; cursor: pointer; transition: 0.3s; filter: drop-shadow(0 0 20px var(--gold)); }
-        .box-anim:hover { transform: scale(1.1); }
-
-        .controls { position: fixed; bottom: 0; width: 100%; background: rgba(0,0,0,0.9); padding: 15px; display: flex; justify-content: center; gap: 10px; }
-        button { background: var(--gold); color: black; padding: 12px 20px; border: none; font-weight: bold; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 0 #b8860b; }
-        .btn-blue { background: #3498db; color: white; box-shadow: 0 4px 0 #2980b9; }
+        canvas { display: block; }
     </style>
 </head>
 <body>
 
-    <div class="stats-header">
-        <span>💰 الذهب: <b id="gold-txt">5000</b></span>
-        <span>🏆 المرحلة: <b id="level-txt">1</b></span>
-    </div>
-
-    <div id="map-screen" class="screen active">
-        <h1 style="text-align:center; color:var(--gold);">خريطة الغزو 🌍</h1>
-        <div class="world-map">
-            <div class="region-card" style="background-image: url('https://img.freepik.com/free-photo/forest-landscape_23-2148159150.jpg');" onclick="enterBattle(1, 'غابة الوحوش', '🐺')">1. غابة الوحوش 🌲</div>
-            <div id="reg-2" class="region-card locked" style="background-image: url('https://img.freepik.com/free-photo/desert-landscape_23-2148159141.jpg');" onclick="enterBattle(2, 'صحراء الهلاك', '🦂')">2. صحراء الهلاك 🏜️</div>
-            <div id="reg-3" class="region-card locked" style="background-image: url('https://img.freepik.com/free-photo/snowy-mountains_23-2148159160.jpg');" onclick="enterBattle(3, 'عرين التنين', '🐉')">3. عرين التنين ❄️</div>
+    <div class="ui-layer">
+        <div class="top-stats">
+            <div class="stat-card">🏆 <span>3051</span></div>
+            <div class="stat-card">💰 <span id="gold">2544</span></div>
+            <div class="stat-card">💎 <span id="gems">0</span></div>
         </div>
+
+        <div class="side-bar">
+            <div class="icon-btn" onclick="toggleSettings()">⚙️</div>
+            <div class="icon-btn">🛒</div>
+            <div class="icon-btn">👥</div>
+        </div>
+
         <div class="controls">
-            <button onclick="showScreen('box-screen')" class="btn-blue">🎁 فتح صناديق (500💰)</button>
-        </div>
-    </div>
-
-    <div id="battle-screen" class="screen arena">
-        <h2 id="battle-title" style="text-align:center;"></h2>
-        <div class="battle-view">
-            <div class="character">
-                <div class="hp-container"><div id="p-hp" class="hp-bar"></div></div>
-                <div class="char-img" id="player-img">🛡️</div>
-                <h3>أنت</h3>
-            </div>
-            <div class="character">
-                <div class="hp-container"><div id="e-hp" class="hp-bar"></div></div>
-                <div id="e-img" class="char-img"></div>
-                <h3 id="e-name">الوحش</h3>
+            <div id="joystick"><div id="stick"></div></div>
+            <div class="action-btns">
+                <div id="super-btn" class="btn-main super">🌟</div>
+                <div id="attack-btn" class="btn-main attack">⚔️</div>
             </div>
         </div>
-        <div class="controls">
-            <button onclick="attack()">هجوم ⚔️</button>
-            <button onclick="heal()" style="background: #2ecc71;">ترميم ✨</button>
-            <button onclick="showScreen('map-screen')" style="background: #666;">انسحاب 🏳️</button>
+    </div>
+
+    <div id="settings-modal" onclick="toggleSettings()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h2 style="color:var(--gold)">الإعدادات ⚙️</h2>
+            <hr>
+            <p>الموسيقى: <input type="range"></p>
+            <p>المؤثرات: <input type="range"></p>
+            <button onclick="toggleSettings()" style="background:var(--red); color:white; padding:10px 20px; border:none; border-radius:10px;">إغلاق</button>
         </div>
     </div>
 
-    <div id="box-screen" class="screen">
-        <h1 class="gold-text">صندوق الحظ الأسطوري</h1>
-        <div id="box-ui">
-            <div class="box-anim" onclick="openBox()">🎁</div>
-            <p>اضغط للفتح مقابل 500 ذهبية</p>
-        </div>
-        <div id="reward-ui" style="display:none;">
-            <div id="reward-icon" style="font-size:120px;"></div>
-            <h2 id="reward-text" class="gold-text"></h2>
-            <button onclick="showScreen('map-screen')">ممتاز!</button>
-        </div>
-    </div>
+    <canvas id="gameCanvas"></canvas>
 
     <script>
-        let gold = 5000, level = 1, pHP = 100, eHP = 100, currentLevel = 1;
-        let pDmgMult = 1; // لزيادة القوة عند الحصول على أبطال من الصناديق
-        const legendaryHeroes = ["🗡️", "🏹", "🧙", "🤖", "🧞", "🦁", "🔥", "❄️"];
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            if(id === 'box-screen') {
-                document.getElementById('box-ui').style.display = 'block';
-                document.getElementById('reward-ui').style.display = 'none';
-            }
+        let player = { x: canvas.width/2, y: canvas.height/2, size: 28, hp: 100, maxHp: 100, gems: 0, superCharge: 0 };
+        let bullets = [], enemies = [], items = [], moveX = 0, moveY = 0;
+
+        // توليد أعداء وجواهر
+        function spawnStuff() {
+            if(enemies.length < 3) enemies.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, hp: 100 });
+            if(items.length < 5) items.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height });
+        }
+        setInterval(spawnStuff, 2000);
+
+        // نظام التحكم
+        const joystick = document.getElementById('joystick');
+        const stick = document.getElementById('stick');
+        joystick.addEventListener('touchstart', (e) => {});
+        window.addEventListener('touchmove', (e) => {
+            let touch = e.touches[0];
+            let rect = joystick.getBoundingClientRect();
+            let dx = touch.clientX - (rect.left + 60);
+            let dy = touch.clientY - (rect.top + 60);
+            let dist = Math.min(Math.hypot(dx, dy), 50);
+            let angle = Math.atan2(dy, dx);
+            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
+            moveX = Math.cos(angle) * (dist/50) * 5;
+            moveY = Math.sin(angle) * (dist/50) * 5;
+        });
+        window.addEventListener('touchend', () => {
+            stick.style.transform = 'translate(0,0)'; moveX = 0; moveY = 0;
+        });
+
+        // الهجوم العادي والسوبر
+        document.getElementById('attack-btn').addEventListener('touchstart', () => fire(false));
+        document.getElementById('super-btn').addEventListener('touchstart', () => fire(true));
+
+        function fire(isSuper) {
+            let color = isSuper ? "purple" : "yellow";
+            bullets.push({ x: player.x, y: player.y, vx: moveX*3 || 10, vy: moveY*3 || 0, isSuper, color });
+            if(isSuper) { player.superCharge = 0; document.getElementById('super-btn').style.display = 'none'; }
         }
 
-        function enterBattle(lvl, name, img) {
-            if(lvl > level) return alert("المنطقة مغلقة!");
-            currentLevel = lvl;
-            pHP = 100; eHP = 100 + (lvl * 30);
-            document.getElementById('e-name').innerText = name;
-            document.getElementById('e-img').innerText = img;
-            document.getElementById('battle-title').innerText = name;
-            updateUI();
-            showScreen('battle-screen');
+        function toggleSettings() {
+            const m = document.getElementById('settings-modal');
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        function attack() {
-            let pDmg = (Math.floor(Math.random() * 20) + 15) * pDmgMult;
-            let eDmg = Math.floor(Math.random() * (10 + currentLevel * 5));
-            eHP -= pDmg; pHP -= eDmg;
-            if(eHP <= 0) {
-                alert("نصر ساحق! +1000 ذهب");
-                gold += 1000;
-                if(currentLevel === level) level++;
-                unlockRegions();
-                showScreen('map-screen');
-            } else if(pHP <= 0) {
-                alert("خسرت! عد للمدينة");
-                showScreen('map-screen');
-            }
-            updateUI();
-        }
+        function draw() {
+            ctx.fillStyle = "#1e3a5f"; ctx.fillRect(0,0,canvas.width, canvas.height);
+            
+            player.x += moveX; player.y += moveY;
 
-        function openBox() {
-            if(gold < 500) return alert("الذهب غير كافٍ!");
-            gold -= 500;
-            const hero = legendaryHeroes[Math.floor(Math.random() * legendaryHeroes.length)];
-            pDmgMult += 0.5; // كل بطل يزيد قوتك 50%
-            document.getElementById('box-ui').style.display = 'none';
-            document.getElementById('reward-ui').style.display = 'block';
-            document.getElementById('reward-icon').innerText = hero;
-            document.getElementById('reward-text').innerText = "بطل جديد! قوتك زادت!";
-            document.getElementById('player-img').innerText = hero;
-            updateUI();
-        }
+            // رسم اللاعب وشريط الحياة
+            ctx.fillStyle = player.superCharge >= 100 ? "var(--purple)" : "var(--blue)";
+            ctx.beginPath(); ctx.arc(player.x, player.y, player.size, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "red"; ctx.fillRect(player.x-20, player.y-40, 40, 5);
+            ctx.fillStyle = "green"; ctx.fillRect(player.x-20, player.y-40, (player.hp/player.maxHp)*40, 5);
 
-        function heal() { pHP = Math.min(100, pHP + 20); updateUI(); }
+            // رسم الجواهر
+            items.forEach((item, i) => {
+                ctx.fillStyle = "magenta"; ctx.fillRect(item.x, item.y, 15, 15);
+                if(Math.hypot(player.x-item.x, player.y-item.y) < 30) { items.splice(i,1); player.gems++; document.getElementById('gems').innerText = player.gems; }
+            });
 
-        function unlockRegions() {
-            if(level >= 2) document.getElementById('reg-2').classList.remove('locked');
-            if(level >= 3) document.getElementById('reg-3').classList.remove('locked');
-            updateUI();
-        }
+            // رسم الأعداء
+            enemies.forEach((en, i) => {
+                ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(en.x, en.y, 30, 0, Math.PI*2); ctx.fill();
+                en.x += (player.x - en.x) * 0.01; en.y += (player.y - en.y) * 0.01;
+            });
 
-        function updateUI() {
-            document.getElementById('p-hp').style.width = pHP + "%";
-            document.getElementById('e-hp').style.width = (eHP / (100 + currentLevel * 30) * 100) + "%";
-            document.getElementById('gold-txt').innerText = gold;
-            document.getElementById('level-txt').innerText = level;
+            // الرصاص وتدمير الأعداء
+            bullets.forEach((b, bi) => {
+                b.x += b.vx; b.y += b.vy;
+                ctx.fillStyle = b.color; ctx.beginPath(); ctx.arc(b.x, b.y, b.isSuper ? 15 : 5, 0, Math.PI*2); ctx.fill();
+                enemies.forEach((en, ei) => {
+                    if(Math.hypot(b.x-en.x, b.y-en.y) < 30) {
+                        en.hp -= b.isSuper ? 100 : 34;
+                        bullets.splice(bi, 1);
+                        if(en.hp <= 0) { 
+                            enemies.splice(ei, 1); 
+                            player.superCharge += 40;
+                            if(player.superCharge >= 100) document.getElementById('super-btn').style.display = 'flex';
+                        }
+                    }
+                });
+            });
+
+            requestAnimationFrame(draw);
         }
+        draw();
     </script>
 </body>
 </html>
