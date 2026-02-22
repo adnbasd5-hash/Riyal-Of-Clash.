@@ -1,145 +1,293 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Riyal of Clash | Brawl Edition</title>
-    <style>
-        :root { --gold: #ffd700; --hp: #2ecc71; }
-        body { margin: 0; background: #000; overflow: hidden; touch-action: none; font-family: 'Arial'; }
-        
-        /* شاشة اللعب والواجهة */
-        #game-container { position: relative; width: 100vw; height: 100vh; background: url('https://img.freepik.com/free-vector/battle-arena-background_23-2148141443.jpg') center/cover; }
-        canvas { display: block; }
+<script>
+const canvas=document.getElementById("mainCanvas");
+const ctx=canvas.getContext("2d");
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
 
-        /* شريط المعلومات العلوي طبق الأصل */
-        .top-stats { position: fixed; top: 10px; width: 100%; display: flex; justify-content: space-around; z-index: 100; pointer-events: none; }
-        .stat-item { background: rgba(0,0,0,0.8); border: 2px solid var(--gold); border-radius: 15px; padding: 5px 15px; font-weight: bold; color: white; display: flex; align-items: center; gap: 5px; }
+/* ================= STATE ================= */
+let state="menu";
+let selectedHero=0;
+let screenShake=0;
+let score=0;
+let gasRadius;
 
-        /* التحكم - الأنالوج وأزرار الهجوم */
-        .joystick-container { position: fixed; bottom: 40px; left: 40px; width: 120px; height: 120px; background: rgba(255,255,255,0.1); border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); }
-        #stick { position: absolute; width: 60px; height: 60px; background: #fff; border-radius: 50%; top: 30px; left: 30px; opacity: 0.8; }
-        
-        .attack-btn { position: fixed; bottom: 50px; right: 50px; width: 100px; height: 100px; background: #e74c3c; border-radius: 50%; border: 5px solid white; display: flex; align-items: center; justify-content: center; font-size: 40px; box-shadow: 0 8px 0 #c0392b; cursor: pointer; }
+/* ================= HERO TYPES ================= */
+const heroes=[
+{ name:"Fighter", hp:5000, speed:3.2, damage:900, color:"cyan" },
+{ name:"Sniper", hp:3200, speed:3.8, damage:1500, color:"orange" },
+{ name:"Tank", hp:8000, speed:2.5, damage:700, color:"lime" }
+];
 
-        /* تسمية البطل وشريط الحياة */
-        .hp-bar-container { position: absolute; width: 60px; height: 8px; background: #000; border-radius: 4px; border: 1px solid white; }
-        .hp-fill { height: 100%; background: var(--hp); border-radius: 4px; transition: 0.2s; }
-    </style>
-</head>
-<body>
+let player;
+let enemies=[];
+let bullets=[];
+let cubes=[];
+let particles=[];
+let texts=[];
 
-    <div id="game-container">
-        <div class="top-stats">
-            <div class="stat-item">🏆 <span>3051</span></div>
-            <div class="stat-item">💰 <span>2544</span></div>
-            <div class="stat-item">💎 <span>208</span></div>
-        </div>
+/* ================= INIT ================= */
+function startGame(){
+let h=heroes[selectedHero];
+player={
+x:canvas.width/2,
+y:canvas.height/2,
+hp:h.hp,
+maxHp:h.hp,
+speed:h.speed,
+damage:h.damage,
+color:h.color,
+ammo:3,
+maxAmmo:3,
+reload:800,
+lastShot:0,
+super:0,
+size:42,
+power:1,
+dashCooldown:0
+};
+enemies=[];
+score=0;
+gasRadius=Math.max(canvas.width,canvas.height);
+state="playing";
+}
 
-        <canvas id="mainCanvas"></canvas>
+/* ================= CONTROLS ================= */
+let keys={};
+window.addEventListener("keydown",e=>{
+keys[e.key]=true;
 
-        <div class="joystick-container" id="joy-base">
-            <div id="stick"></div>
-        </div>
+if(state==="menu"){
+if(e.key==="1") selectedHero=0;
+if(e.key==="2") selectedHero=1;
+if(e.key==="3") selectedHero=2;
+if(e.key==="Enter") startGame();
+}
+});
+window.addEventListener("keyup",e=>keys[e.key]=false);
+window.addEventListener("click",()=>{
+if(state==="gameover"||state==="win") state="menu";
+});
 
-        <div class="attack-btn" id="fire-btn">⚔️</div>
-    </div>
+/* ================= LOOP ================= */
+function loop(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
 
-    <script>
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+if(screenShake>0){
+ctx.translate((Math.random()-0.5)*10,(Math.random()-0.5)*10);
+screenShake--;
+}
 
-        // تحميل صور الشخصيات (آيش وكولت)
-        const ashImg = new Image();
-        ashImg.src = 'https://raw.githubusercontent.com/BrawlStars/BrawlStars-Assets/master/Brawlers/Ash/Ash_Icon.png'; 
-        
-        const enemyImg = new Image();
-        enemyImg.src = 'https://raw.githubusercontent.com/BrawlStars/BrawlStars-Assets/master/Brawlers/Colt/Colt_Icon.png';
+if(state==="menu") drawMenu();
+if(state==="playing") updateGame();
+if(state==="gameover") drawCenter("💀 خسرت - اضغط للعودة");
+if(state==="win") drawCenter("🔥 فزت - اضغط للعودة");
 
-        let player = { x: canvas.width/2, y: canvas.height/2, hp: 4500, maxHp: 4500, size: 60, speed: 5, dirX: 0, dirY: 0 };
-        let bullets = [], enemies = [{ x: 200, y: 200, hp: 3000, maxHp: 3000 }];
+ctx.setTransform(1,0,0,1,0,0);
+requestAnimationFrame(loop);
+}
 
-        // التحكم بالأنالوج
-        const stick = document.getElementById('stick');
-        const joyBase = document.getElementById('joy-base');
-        let joyActive = false;
+/* ================= MENU ================= */
+function drawMenu(){
+ctx.fillStyle="white";
+ctx.font="30px Arial";
+ctx.fillText("اختر بطلك:",canvas.width/2-80,150);
+ctx.fillText("1-Fighter",canvas.width/2-80,200);
+ctx.fillText("2-Sniper",canvas.width/2-80,240);
+ctx.fillText("3-Tank",canvas.width/2-80,280);
+ctx.fillText("Enter للبدء",canvas.width/2-80,330);
+}
 
-        joyBase.addEventListener('touchstart', () => joyActive = true);
-        window.addEventListener('touchmove', (e) => {
-            if(!joyActive) return;
-            let t = e.touches[0];
-            let rect = joyBase.getBoundingClientRect();
-            let dx = t.clientX - (rect.left + 60);
-            let dy = t.clientY - (rect.top + 60);
-            let dist = Math.min(Math.hypot(dx, dy), 40);
-            let angle = Math.atan2(dy, dx);
-            
-            stick.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px)`;
-            player.dirX = Math.cos(angle);
-            player.dirY = Math.sin(angle);
-        });
-        window.addEventListener('touchend', () => {
-            joyActive = false;
-            stick.style.transform = 'translate(0,0)';
-            player.dirX = 0; player.dirY = 0;
-        });
+/* ================= GAME ================= */
+function updateGame(){
+spawnEnemies();
+movePlayer();
+updateBullets();
+updateEnemies();
+updateCubes();
+updateParticles();
+updateTexts();
+updateGas();
+drawUI();
 
-        // زر الهجوم
-        document.getElementById('fire-btn').addEventListener('touchstart', () => {
-            bullets.push({ x: player.x, y: player.y, vx: player.dirX*15 || 15, vy: player.dirY*15 || 0 });
-        });
+if(enemies.length===0&&score>8) state="win";
+}
 
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+/* ================= PLAYER ================= */
+function movePlayer(){
+let dx=0,dy=0;
+if(keys["w"]) dy=-1;
+if(keys["s"]) dy=1;
+if(keys["a"]) dx=-1;
+if(keys["d"]) dx=1;
 
-            // تحريك اللاعب
-            player.x += player.dirX * player.speed;
-            player.y += player.dirY * player.speed;
+let len=Math.hypot(dx,dy);
+if(len>0){dx/=len;dy/=len;}
 
-            // رسم البطل (آيش)
-            ctx.drawImage(ashImg, player.x - 30, player.y - 30, 60, 60);
-            drawHP(player.x, player.y - 45, player.hp, player.maxHp, "أنت");
+player.x+=dx*player.speed;
+player.y+=dy*player.speed;
 
-            // رسم الأعداء (كولت)
-            enemies.forEach((en, i) => {
-                ctx.drawImage(enemyImg, en.x - 30, en.y - 30, 60, 60);
-                drawHP(en.x, en.y - 45, en.hp, en.maxHp, "بوت");
-                // مطاردة اللاعب
-                en.x += (player.x - en.x) * 0.01;
-                en.y += (player.y - en.y) * 0.01;
-            });
+if(keys[" "] && Date.now()-player.lastShot>player.reload && player.ammo>0){
+shoot(dx||1,dy);
+player.ammo--;
+player.lastShot=Date.now();
+}
 
-            // تحديث الرصاص والتصادم
-            bullets.forEach((b, bi) => {
-                b.x += b.vx; b.y += b.vy;
-                ctx.fillStyle = "yellow";
-                ctx.beginPath(); ctx.arc(b.x, b.y, 6, 0, Math.PI*2); ctx.fill();
-                
-                enemies.forEach((en, ei) => {
-                    if(Math.hypot(b.x-en.x, b.y-en.y) < 30) {
-                        en.hp -= 800;
-                        bullets.splice(bi, 1);
-                        if(en.hp <= 0) enemies.splice(ei, 1);
-                    }
-                });
-            });
+if(keys["Shift"] && player.dashCooldown<=0){
+player.x+=dx*80;
+player.y+=dy*80;
+player.dashCooldown=100;
+}
 
-            requestAnimationFrame(gameLoop);
-        }
+if(player.dashCooldown>0) player.dashCooldown--;
 
-        function drawHP(x, y, hp, max, name) {
-            ctx.fillStyle = "rgba(0,0,0,0.5)";
-            ctx.fillRect(x - 30, y, 60, 8);
-            ctx.fillStyle = "#2ecc71";
-            ctx.fillRect(x - 30, y, (hp/max)*60, 8);
-            ctx.fillStyle = "white";
-            ctx.font = "12px Arial";
-            ctx.fillText(name, x - 10, y - 5);
-        }
+ctx.fillStyle=player.color;
+ctx.beginPath();
+ctx.arc(player.x,player.y,player.size/2,0,Math.PI*2);
+ctx.fill();
 
-        gameLoop();
+if(player.hp<=0) state="gameover";
+}
+
+/* ================= SHOOT ================= */
+function shoot(dx,dy){
+bullets.push({
+x:player.x,
+y:player.y,
+vx:dx*12,
+vy:dy*12,
+damage:player.damage*player.power
+});
+}
+
+/* ================= ENEMIES ================= */
+function spawnEnemies(){
+if(enemies.length<6 && Math.random()<0.02){
+enemies.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+hp:3000,
+size:40
+});
+}
+}
+
+function updateEnemies(){
+enemies.forEach((e,i)=>{
+let dist=Math.hypot(player.x-e.x,player.y-e.y);
+
+if(e.hp<1000){
+e.x-=(player.x-e.x)*0.02; // يهرب
+e.y-=(player.y-e.y)*0.02;
+}else{
+e.x+=(player.x-e.x)*0.01;
+e.y+=(player.y-e.y)*0.01;
+}
+
+ctx.fillStyle="red";
+ctx.beginPath();
+ctx.arc(e.x,e.y,e.size/2,0,Math.PI*2);
+ctx.fill();
+
+if(dist<40){
+player.hp-=5;
+}
+
+bullets.forEach((b,bi)=>{
+if(Math.hypot(b.x-e.x,b.y-e.y)<30){
+e.hp-=b.damage;
+texts.push({x:e.x,y:e.y,t:b.damage,life:30});
+spawnParticles(e.x,e.y);
+screenShake=5;
+bullets.splice(bi,1);
+if(e.hp<=0){
+cubes.push({x:e.x,y:e.y});
+enemies.splice(i,1);
+score++;
+}
+}
+});
+});
+}
+
+/* ================= BULLETS ================= */
+function updateBullets(){
+bullets.forEach(b=>{
+b.x+=b.vx;
+b.y+=b.vy;
+ctx.fillStyle="yellow";
+ctx.beginPath();
+ctx.arc(b.x,b.y,6,0,Math.PI*2);
+ctx.fill();
+});
+}
+
+/* ================= GAS ================= */
+function updateGas(){
+gasRadius-=0.04;
+ctx.beginPath();
+ctx.arc(canvas.width/2,canvas.height/2,gasRadius,0,Math.PI*2);
+ctx.strokeStyle="rgba(0,255,0,0.4)";
+ctx.lineWidth=40;
+ctx.stroke();
+
+if(Math.hypot(player.x-canvas.width/2,player.y-canvas.height/2)>gasRadius){
+player.hp-=3;
+}
+}
+
+/* ================= POWER ================= */
+function updateCubes(){
+cubes.forEach((c,i)=>{
+ctx.fillStyle="lime";
+ctx.fillRect(c.x-8,c.y-8,16,16);
+if(Math.hypot(player.x-c.x,player.y-c.y)<30){
+player.power+=0.2;
+player.maxHp+=200;
+player.hp+=200;
+cubes.splice(i,1);
+}
+});
+}
+
+/* ================= FX ================= */
+function spawnParticles(x,y){
+for(let i=0;i<8;i++){
+particles.push({x,y,vx:(Math.random()-0.5)*4,vy:(Math.random()-0.5)*4,life:20});
+}
+}
+
+function updateParticles(){
+particles.forEach((p,i)=>{
+p.x+=p.vx;p.y+=p.vy;p.life--;
+ctx.fillStyle="orange";
+ctx.fillRect(p.x,p.y,3,3);
+if(p.life<=0) particles.splice(i,1);
+});
+}
+
+function updateTexts(){
+texts.forEach((t,i)=>{
+ctx.fillStyle="white";
+ctx.fillText(t.t,t.x,t.y);
+t.y-=1;t.life--;
+if(t.life<=0) texts.splice(i,1);
+});
+}
+
+/* ================= UI ================= */
+function drawUI(){
+ctx.fillStyle="white";
+ctx.fillText("HP:"+Math.floor(player.hp),20,30);
+ctx.fillText("Kills:"+score,20,50);
+ctx.fillText("Power:"+player.power.toFixed(1),20,70);
+ctx.fillText("WASD حركة | Space اطلاق | Shift داش",20,100);
+}
+
+function drawCenter(t){
+ctx.fillStyle="white";
+ctx.font="30px Arial";
+ctx.fillText(t,canvas.width/2-150,canvas.height/2);
+}
+
+loop();
     </script>
-</body>
-</html>
